@@ -2,16 +2,19 @@ import os.path
 import re
 import gensim as gensim
 import jieba
+from line_profiler import LineProfiler
 from bs4 import BeautifulSoup
-def arrive_file_text(path):  #读取文件
+
+
+def get_file_contents(path):
     str = ''
     f = open(path,'r',encoding = 'UTF-8')
     line = f.readline()
     while line:
         str = str + line
         line = f.readline()
-        f.close()
-        return str
+    f.close()
+    return str
 
 def html_to_text(html):
     soup = BeautifulSoup(html,'html.parser')
@@ -26,7 +29,7 @@ def distinguish(str):  #分词
             result.append(tags)
         else:
             pass
-        return result
+    return result
 
 def calc_similarity(text1,text2):
     texts = [text1,text2]
@@ -36,10 +39,11 @@ def calc_similarity(text1,text2):
     test_corpus_1 = dictionary.doc2bow(text1)
     cosine_sim = similarity[test_corpus_1][1]
     return cosine_sim
+
 def main(path1,path2):  #主函数
     save_path = 'D:\\1\\3121005101\\result.txt'  #输出路径
-    str1 = arrive_file_text(path1)
-    str2 = arrive_file_text(path2)
+    str1 = get_file_contents(path1)
+    str2 = get_file_contents(path2)
 
     #将html转换成txt格式
     text1 = html_to_text(str1)
@@ -63,3 +67,11 @@ if __name__ == '__main__':
          print("论文要检测文件不存在")
          exit()
      main(path1, path2)
+     p = LineProfiler()
+     p.add_function(get_file_contents)
+     p.add_function(distinguish)
+     p.add_function(calc_similarity)
+     p_wrap = p(main)
+     p_wrap(path1,path2)
+     p.print_stats()
+     p.dump_stats('saveName.lprof')
