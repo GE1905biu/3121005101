@@ -52,9 +52,9 @@ def main(path1,path2):  #主函数
     text1 = distinguish(str1)
     text2 = distinguish(str2)
     similarity = calc_similarity(text1,text2)
-    print("论文相似度：%.2f"%similarity)
+    print("论文相似度：%.4f"%similarity)
     f = open(save_path,'w',encoding = "utf-8")
-    f.write("论文相似度：%.2f"%similarity)
+    f.write("论文相似度：%.4f"%similarity)
     f.close()
 
 if __name__ == '__main__':
