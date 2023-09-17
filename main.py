@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 # 将jieba的日志级别设置为ERROR，禁止输出信息
 jieba.setLogLevel(logging.ERROR)
 
-
 # 用于获取文件内容的函数
 def get_file_contents(path):
     try:
@@ -21,13 +20,11 @@ def get_file_contents(path):
     except FileNotFoundError:
         return None
 
-
 # 用于将HTML转换为纯文本的函数
 def html_to_text(html):
     soup = BeautifulSoup(html, 'html.parser')  # 使用BeautifulSoup解析HTML
     text = soup.get_text()  # 获取纯文本内容
     return text  # 返回纯文本
-
 
 # 用于分词的函数
 def distinguish(text):
@@ -41,11 +38,9 @@ def distinguish(text):
     words = list(jieba.cut(text_without_html, cut_all=False, HMM=True))
 
     # 恢复特殊字符为原始空格
-    result = [word.replace('_', ' ') if '_' in word else word for word in words if
-              re.match(u"[a-zA-Z0-9\u4e00-\u9fa5]", word)]
+    result = [word.replace('_', ' ') if '_' in word else word for word in words if re.match(u"[a-zA-Z0-9\u4e00-\u9fa5]", word)]
 
     return result  # 返回分词结果
-
 
 # 计算文本相似度的函数
 def calc_similarity(text1, text2):
@@ -65,7 +60,7 @@ def calc_similarity(text1, text2):
     cosine_sim = similarity[test_corpus_1][1]  # 计算余弦相似度
     return float(cosine_sim)  # 返回相似度值作为浮点数
 
-
+# 输出结果的函数
 def output_result(result_path, similarity):
     try:
         result_file = open(result_path, 'w', encoding='utf-8')
@@ -75,7 +70,6 @@ def output_result(result_path, similarity):
     result_file.write('相似度:' + str("%.2f%%" % (similarity * 100)))
     result_file.close()
     print('相似度:', ("%.2f%%" % (similarity * 100)))
-
 
 # 主函数
 def main(path1, path2):
@@ -103,7 +97,6 @@ def main(path1, path2):
     with open(save_path, 'w', encoding="utf-8") as f:
         f.write("论文相似度：%.4f" % similarity)
     return similarity  # 返回相似性值
-
 
 if __name__ == '__main__':
     path1 = input("输入论文原文的文件绝对路径：")
