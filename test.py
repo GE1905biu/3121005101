@@ -74,7 +74,7 @@ class MyTestCase(unittest.TestCase):
     @patch('builtins.print')
     def test_output_result(self, mock_print):
         # 编写测试用例以测试output_result函数
-        result_path = 'result.txt'
+        result_path = 'result2.txt'
         similarity = 0.75
         output_result(result_path, similarity)
         mock_print.assert_called_with('相似度:', '75.00%')

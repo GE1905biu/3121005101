@@ -45,6 +45,8 @@ def distinguish(text):
               re.match(u"[a-zA-Z0-9\u4e00-\u9fa5]", word)]
 
     return result  # 返回分词结果
+
+
 # 计算文本相似度的函数
 def calc_similarity(text1, text2):
     # 将输入的文本转换为字符串，如果它们已经是列表
@@ -62,6 +64,7 @@ def calc_similarity(text1, text2):
     test_corpus_1 = dictionary.doc2bow(text1.split())  # 将第一个文本转换为词袋模型
     cosine_sim = similarity[test_corpus_1][1]  # 计算余弦相似度
     return float(cosine_sim)  # 返回相似度值作为浮点数
+
 
 def output_result(result_path, similarity):
     try:
@@ -99,7 +102,6 @@ def main(path1, path2):
     # 将相似度结果写入文件
     with open(save_path, 'w', encoding="utf-8") as f:
         f.write("论文相似度：%.4f" % similarity)
-
     return similarity  # 返回相似性值
 
 
