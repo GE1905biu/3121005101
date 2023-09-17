@@ -1,22 +1,25 @@
+import numpy as np
 import os.path
+import logging
 import re
 import gensim as gensim
+import jieba.analyse
 import jieba
-import difflib
+from gensim import corpora, similarities
 from line_profiler import LineProfiler
 from bs4 import BeautifulSoup
+
+# 将jieba的日志级别设置为ERROR，禁止输出信息
+jieba.setLogLevel(logging.ERROR)
 
 
 # 用于获取文件内容的函数
 def get_file_contents(path):
-    str = ''  # 用于存储文件内容的字符串
-    f = open(path, 'r', encoding='UTF-8')  # 打开文件，使用UTF-8编码读取
-    line = f.readline()  # 逐行读取文件内容
-    while line:
-        str = str + line  # 将每一行的内容拼接到str中
-        line = f.readline()
-    f.close()  # 关闭文件
-    return str  # 返回文件内容的字符串
+    try:
+        with open(path, 'r', encoding='UTF-8') as file:
+            return file.read()
+    except FileNotFoundError:
+        return None
 
 
 # 用于将HTML转换为纯文本的函数
@@ -28,21 +31,47 @@ def html_to_text(html):
 
 # 用于分词的函数
 def distinguish(text):
-    words = jieba.lcut(text)  # 使用jieba库进行中文分词
-    # 仅保留包含字母、数字、汉字或HTML标签的词语
-    result = [word for word in words if re.match(u"[a-zA-Z0-9\u4e00-\u9fa5]", word) or re.match(r'<[^>]+>', word)]
+    # 使用正则表达式将HTML标签从文本中删除
+    text_without_html = re.sub(r'<[^>]+>', '', text)
+
+    # 使用正则表达式将英文单词与标点符号之间的空格替换为特殊字符
+    text_without_html = re.sub(r'([a-zA-Z0-9]+)([，。、！？,.!?\n])', r'\1\2', text_without_html)
+
+    # 使用jieba库进行中文分词，同时保留英文单词
+    words = list(jieba.cut(text_without_html, cut_all=False, HMM=True))
+
+    # 恢复特殊字符为原始空格
+    result = [word.replace('_', ' ') if '_' in word else word for word in words if
+              re.match(u"[a-zA-Z0-9\u4e00-\u9fa5]", word)]
+
     return result  # 返回分词结果
-
-
 # 计算文本相似度的函数
 def calc_similarity(text1, text2):
-    texts = [text1, text2]  # 将两个文本组成列表
-    dictionary = gensim.corpora.Dictionary(texts)  # 创建文本词典
+    # 将输入的文本转换为字符串，如果它们已经是列表
+    if isinstance(text1, list):
+        text1 = ' '.join(text1)
+    if isinstance(text2, list):
+        text2 = ' '.join(text2)
+
+    # 将两个文本拆分为词语列表
+    texts = [text1.split(), text2.split()]
+
+    dictionary = corpora.Dictionary(texts)  # 创建文本词典
     corpus = [dictionary.doc2bow(text) for text in texts]  # 将文本转换为词袋模型
-    similarity = gensim.similarities.Similarity('-Similarity-index', corpus, num_features=len(dictionary))  # 计算相似度
-    test_corpus_1 = dictionary.doc2bow(text1)  # 将第一个文本转换为词袋模型
+    similarity = similarities.Similarity('-Similarity-index', corpus, num_features=len(dictionary))  # 计算相似度
+    test_corpus_1 = dictionary.doc2bow(text1.split())  # 将第一个文本转换为词袋模型
     cosine_sim = similarity[test_corpus_1][1]  # 计算余弦相似度
-    return cosine_sim  # 返回相似度值
+    return float(cosine_sim)  # 返回相似度值作为浮点数
+
+def output_result(result_path, similarity):
+    try:
+        result_file = open(result_path, 'w', encoding='utf-8')
+    except (FileNotFoundError, PermissionError):
+        print('输出文件路径错误')
+        return FileNotFoundError, PermissionError
+    result_file.write('相似度:' + str("%.2f%%" % (similarity * 100)))
+    result_file.close()
+    print('相似度:', ("%.2f%%" % (similarity * 100)))
 
 
 # 主函数
@@ -81,14 +110,7 @@ if __name__ == '__main__':
         print("论文原文文件不存在")
         exit()
     if not os.path.exists(path2):
+        print("文件地址出错，无法找到文件计算相似度")
         print("论文要检测文件不存在")
         exit()
     main(path1, path2)
-    p = LineProfiler()
-    p.add_function(get_file_contents)
-    p.add_function(distinguish)
-    p.add_function(calc_similarity)
-    p_wrap = p(main)
-    p_wrap(path1, path2)
-    p.print_stats()
-    p.dump_stats('saveName.lprof')
